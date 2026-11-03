@@ -26,3 +26,6 @@ Requisitos: Android Studio Ladybug (2024.2) o posterior, JDK 17 (incluido en And
 
 ## Aviso
 Use la app solo con videos propios o con permiso del autor.
+
+## APK compilado automáticamente
+Cada push a `main` compila el APK con GitHub Actions. Descárguelo en la pestaña **Actions** → última ejecución → **Artifacts** → `SinMarca-debug-apk`.
