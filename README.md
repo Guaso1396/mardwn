@@ -24,6 +24,26 @@ Requisitos: Android Studio Ladybug (2024.2) o posterior, JDK 17 (incluido en And
 - `app/src/main/java/com/example/mardwn/MainActivity.kt` – interfaz.
 - `app/src/main/res/layout/activity_main.xml` – diseño de pantalla.
 
+## Todo es gratuito
+La app no usa servicios de pago, claves de API ni servidores propios: todo se ejecuta en el teléfono.
+
+| Componente | Uso | Licencia | Costo |
+|---|---|---|---|
+| Android Studio, Android SDK, Gradle | Desarrollo y compilación | Gratuitos (Gradle: Apache 2.0) | $0 |
+| Kotlin, kotlinx-coroutines | Lenguaje y tareas en segundo plano | Apache 2.0 | $0 |
+| AndroidX, Material Components | Interfaz | Apache 2.0 | $0 |
+| youtubedl-android 0.18.1 | Ejecuta yt-dlp y ffmpeg en Android | GPL-3.0 | $0 |
+| yt-dlp | Descarga del video original | Unlicense (dominio público) | $0 |
+| FFmpeg | Limpieza de la marca (delogo) | LGPL/GPL | $0 |
+| Python (incluido en la librería) | Ejecuta yt-dlp | PSF | $0 |
+| GitHub (repositorio público) + GitHub Actions | Código y compilación del APK | — | $0 en repositorios públicos |
+
+Como `youtubedl-android` es GPL-3.0, este proyecto también se distribuye bajo **GPL-3.0** (ver `LICENSE`):
+cualquiera puede usar, modificar y compartir el código gratis, siempre que mantenga el código abierto bajo la misma licencia.
+
+Único costo opcional: publicar en Google Play requiere una cuenta de desarrollador de pago único. No es necesario:
+el APK se puede instalar directamente desde la pestaña Actions o desde GitHub Releases.
+
 ## Aviso
 Use la app solo con videos propios o con permiso del autor.
 
