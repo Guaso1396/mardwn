@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">SinMarca</string>
+    <string name="titulo_enlace">1. Descargar por enlace</string>
+    <string name="ayuda_enlace">Pegue el enlace de TikTok (o use Compartir → SinMarca). Se descarga la versión original, sin logo ni @usuario y sin pérdida de calidad.</string>
+    <string name="hint_url">https://www.tiktok.com/@usuario/video/…</string>
+    <string name="pegar">Pegar</string>
+    <string name="descargar">Descargar sin marca</string>
+    <string name="titulo_local">2. Limpiar un video que ya tiene la marca</string>
+    <string name="ayuda_local">Elija un video de la galería. Se reconstruyen las zonas del logo y el @usuario; puede quedar una mancha borrosa.</string>
+    <string name="elegir">Elegir video</string>
+    <string name="ver">Ver video</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="actualizar">Actualizar yt-dlp</string>
+    <string name="aviso_legal">Use esta app solo con videos propios o con permiso del autor. Quitar la atribución para republicar contenido ajeno puede infringir derechos de autor y los términos de TikTok.</string>
+</resources>
