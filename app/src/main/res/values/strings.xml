@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name">SinMarca</string>
+    <string name="app_name">mardwn</string>
     <string name="titulo_enlace">1. Descargar por enlace</string>
-    <string name="ayuda_enlace">Pegue el enlace de TikTok (o use Compartir → SinMarca). Se descarga la versión original, sin logo ni @usuario y sin pérdida de calidad.</string>
+    <string name="ayuda_enlace">Pegue el enlace de TikTok (o use Compartir → mardwn). Se descarga la versión original, sin logo ni @usuario y sin pérdida de calidad.</string>
     <string name="hint_url">https://www.tiktok.com/@usuario/video/…</string>
     <string name="pegar">Pegar</string>
     <string name="descargar">Descargar sin marca</string>

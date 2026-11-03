@@ -1,4 +1,4 @@
-package com.example.sinmarca
+package com.example.mardwn
 
 import android.content.ContentValues
 import android.content.Context
@@ -181,15 +181,15 @@ object Motor {
         if (proc.waitFor() != 0) throw Exception("ffmpeg falló:\n${log.takeLast(400)}")
     }
 
-    /** Copia el video a Películas/SinMarca para que aparezca en la galería. */
+    /** Copia el video a Películas/mardwn para que aparezca en la galería. */
     fun guardarEnGaleria(ctx: Context, archivo: File): String {
-        val nombre = "sinmarca_${System.currentTimeMillis()}.mp4"
+        val nombre = "mardwn_${System.currentTimeMillis()}.mp4"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val cr = ctx.contentResolver
             val valores = ContentValues().apply {
                 put(MediaStore.Video.Media.DISPLAY_NAME, nombre)
                 put(MediaStore.Video.Media.MIME_TYPE, "video/mp4")
-                put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/SinMarca")
+                put(MediaStore.Video.Media.RELATIVE_PATH, "${Environment.DIRECTORY_MOVIES}/mardwn")
                 put(MediaStore.Video.Media.IS_PENDING, 1)
             }
             val coleccion = MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
@@ -200,12 +200,12 @@ object Motor {
             cr.update(uri, valores, null, null)
         } else {
             @Suppress("DEPRECATION")
-            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "SinMarca")
+            val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "mardwn")
             dir.mkdirs()
             val destino = File(dir, nombre)
             archivo.copyTo(destino, overwrite = true)
             MediaScannerConnection.scanFile(ctx, arrayOf(destino.absolutePath), arrayOf("video/mp4"), null)
         }
-        return "Películas/SinMarca/$nombre"
+        return "Películas/mardwn/$nombre"
     }
 }

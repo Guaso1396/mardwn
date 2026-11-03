@@ -1,5 +1,5 @@
 <resources>
-    <style name="Theme.SinMarca" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.Mardwn" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/primario</item>
     </style>
 </resources>

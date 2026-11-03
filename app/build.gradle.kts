@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.sinmarca"
+    namespace = "com.example.mardwn"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.sinmarca"
+        applicationId = "com.example.mardwn"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
