@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.example.markdwn.Proporcion34 xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="1dp"
+    android:background="@drawable/fondo_miniatura"
+    android:clickable="true"
+    android:focusable="true"
+    android:foreground="?attr/selectableItemBackground">
+
+    <ImageView
+        android:id="@+id/miniatura"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_gravity="bottom"
+        android:background="@drawable/fondo_sombra_inferior" />
+
+    <TextView
+        android:id="@+id/vistas"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|start"
+        android:layout_margin="6dp"
+        android:drawablePadding="3dp"
+        android:textColor="#FFFFFF"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:drawableStart="@drawable/ic_play_pequeno" />
+
+    <ImageView
+        android:id="@+id/descargado"
+        android:layout_width="22dp"
+        android:layout_height="22dp"
+        android:layout_gravity="top|end"
+        android:layout_margin="6dp"
+        android:contentDescription="@string/ya_descargado"
+        android:src="@drawable/ic_check"
+        android:visibility="gone" />
+</com.example.markdwn.Proporcion34>

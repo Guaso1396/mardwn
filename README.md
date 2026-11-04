@@ -11,17 +11,24 @@ App Android (Kotlin) para descargar videos de TikTok sin la marca de agua (logo 
 Requisitos: Android Studio Ladybug (2024.2) o posterior, JDK 17 (incluido en Android Studio), teléfono con Android 7.0+.
 
 ## Cómo funciona
-- **Opción 1 – Enlace:** usa yt-dlp (vía `youtubedl-android` 0.18.1) y descarta los formatos que yt-dlp
-  marca como `watermarked` (`download` / `download_addr`). Descarga el stream de reproducción original (`play_addr`), sin marca.
-  También acepta enlaces enviados con **Compartir → markdwn** desde TikTok.
-- **Opción 2 – Video local:** aplica el filtro `delogo` de ffmpeg sobre las zonas típicas de la marca
-  (`Motor.ZONAS_TIKTOK`). Interpola los píxeles; puede quedar una mancha borrosa. Ajuste las zonas si es necesario.
-- Los resultados se guardan en **Películas/markdwn**.
+- **Descargar:** pegue un enlace de TikTok (o use **Compartir → markdwn** desde TikTok). La app usa yt-dlp
+  (vía `youtubedl-android` 0.18.1) y descarta los formatos que yt-dlp marca como `watermarked`
+  (`download` / `download_addr`): descarga el stream original (`play_addr`), **sin el logo de TikTok ni el @usuario**.
+- **Perfil del creador:** después de descargar, toque **Ver perfil del creador** para ver su nombre, su @usuario y
+  sus 30 videos más recientes (miniatura y vistas). Tocar un video lo descarga sin marca; los ya descargados llevan ✓.
+  yt-dlp no entrega la foto de perfil, por eso se muestra la inicial del nombre.
+- **Mis descargas:** pestaña con el historial (miniatura, descripción, @usuario y fecha). Tocar abre el video;
+  mantener presionado lo quita de la lista (el video sigue en la galería).
+- Los videos se guardan en **Películas/markdwn**.
 - **Actualizar yt-dlp:** úselo cuando las descargas fallen; TikTok cambia con frecuencia.
 
+Solo funciona con enlaces de TikTok. No quita marcas de videos que ya estén en la galería.
+
 ## Archivos principales
-- `app/src/main/java/com/example/markdwn/Motor.kt` – descarga, limpieza ffmpeg, guardado.
-- `app/src/main/java/com/example/markdwn/MainActivity.kt` – interfaz.
+- `app/src/main/java/com/example/markdwn/Motor.kt` – descarga, perfil del creador, guardado en galería.
+- `app/src/main/java/com/example/markdwn/Historial.kt` – historial de descargas.
+- `app/src/main/java/com/example/markdwn/MainActivity.kt` – pestañas Descargar y Mis descargas.
+- `app/src/main/java/com/example/markdwn/PerfilActivity.kt` – perfil y videos del creador.
 - `app/src/main/res/layout/activity_main.xml` – diseño de pantalla.
 
 ## Todo es gratuito
@@ -34,7 +41,7 @@ La app no usa servicios de pago, claves de API ni servidores propios: todo se ej
 | AndroidX, Material Components | Interfaz | Apache 2.0 | $0 |
 | youtubedl-android 0.18.1 | Ejecuta yt-dlp y ffmpeg en Android | GPL-3.0 | $0 |
 | yt-dlp | Descarga del video original | Unlicense (dominio público) | $0 |
-| FFmpeg | Limpieza de la marca (delogo) | LGPL/GPL | $0 |
+| FFmpeg | Procesamiento de video que usa yt-dlp | LGPL/GPL | $0 |
 | Python (incluido en la librería) | Ejecuta yt-dlp | PSF | $0 |
 | GitHub (repositorio público) + GitHub Actions | Código y compilación del APK | — | $0 en repositorios públicos |
 
@@ -64,7 +71,7 @@ La app no usa servicios de pago, claves de API ni servidores propios: todo se ej
 | AndroidX, Material Components | Interfaz | Apache 2.0 | $0 |
 | youtubedl-android 0.18.1 | Ejecuta yt-dlp y ffmpeg en Android | GPL-3.0 | $0 |
 | yt-dlp | Descarga del video original | Unlicense (dominio público) | $0 |
-| FFmpeg | Limpieza de la marca (delogo) | LGPL/GPL | $0 |
+| FFmpeg | Procesamiento de video que usa yt-dlp | LGPL/GPL | $0 |
 | Python (incluido en la librería) | Ejecuta yt-dlp | PSF | $0 |
 | GitHub (repositorio público) + GitHub Actions | Código y compilación del APK | — | $0 en repositorios públicos |
 

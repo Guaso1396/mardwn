@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_descargar"
+        android:icon="@drawable/ic_descargar"
+        android:title="@string/nav_descargar" />
+    <item
+        android:id="@+id/nav_historial"
+        android:icon="@drawable/ic_historial"
+        android:title="@string/mis_descargas" />
+</menu>

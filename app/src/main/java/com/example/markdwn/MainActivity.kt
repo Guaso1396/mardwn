@@ -4,36 +4,33 @@ import android.Manifest
 import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.markdwn.databinding.ActivityMainBinding
-import kotlinx.coroutines.Dispatchers
+import com.example.markdwn.databinding.ItemHistorialBinding
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import java.io.File
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var b: ActivityMainBinding
-    private var ultimoArchivo: File? = null
     private var tarea: Job? = null
     private var accionPendiente: (() -> Unit)? = null
-
-    private val elegirVideo = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        if (uri != null) limpiarVideo(uri)
-    }
+    private val adaptador = AdaptadorHistorial()
 
     private val permisoAlmacenamiento =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
@@ -56,13 +53,24 @@ class MainActivity : AppCompatActivity() {
 
         b.btnPegar.setOnClickListener { pegarDelPortapapeles() }
         b.btnDescargar.setOnClickListener { descargar() }
-        b.btnElegir.setOnClickListener { elegirVideo.launch("video/*") }
-        b.btnVer.setOnClickListener { verUltimo() }
         b.btnCancelar.setOnClickListener { Motor.cancelar(); tarea?.cancel() }
         b.btnActualizar.setOnClickListener { actualizar() }
 
+        b.listaHistorial.layoutManager = LinearLayoutManager(this)
+        b.listaHistorial.adapter = adaptador
+
+        b.navegacion.setOnItemSelectedListener { item ->
+            mostrarPestana(item.itemId == R.id.nav_historial)
+            true
+        }
+
         manejarCompartido(intent)
         iniciarMotor()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refrescarHistorial()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -70,10 +78,26 @@ class MainActivity : AppCompatActivity() {
         manejarCompartido(intent)
     }
 
+    private fun mostrarPestana(historial: Boolean) {
+        b.vistaDescargar.visibility = if (historial) View.GONE else View.VISIBLE
+        b.vistaHistorial.visibility = if (historial) View.VISIBLE else View.GONE
+        b.barra.title = if (historial) getString(R.string.mis_descargas) else getString(R.string.app_name)
+        if (historial) refrescarHistorial()
+    }
+
+    private fun refrescarHistorial() {
+        val lista = Historial.todas(this)
+        adaptador.lista = lista
+        b.tvHistorialVacio.visibility = if (lista.isEmpty()) View.VISIBLE else View.GONE
+    }
+
     /** Recibe el enlace cuando el usuario usa "Compartir" en TikTok y elige esta app. */
     private fun manejarCompartido(intent: Intent?) {
         if (intent?.action == Intent.ACTION_SEND) {
-            extraerUrl(intent.getStringExtra(Intent.EXTRA_TEXT))?.let { b.etUrl.setText(it) }
+            extraerUrl(intent.getStringExtra(Intent.EXTRA_TEXT))?.let {
+                b.etUrl.setText(it)
+                b.navegacion.selectedItemId = R.id.nav_descargar
+            }
         }
     }
 
@@ -85,11 +109,10 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 Motor.iniciar(this@MainActivity)
-                ocupado(false, "Listo. Pegue un enlace o elija un video.")
+                ocupado(false, "Listo. Pegue un enlace de TikTok.")
             } catch (e: Exception) {
                 ocupado(false, "No se pudo iniciar el motor: ${e.message}")
                 b.btnDescargar.isEnabled = false
-                b.btnElegir.isEnabled = false
             }
         }
     }
@@ -103,19 +126,24 @@ class MainActivity : AppCompatActivity() {
 
     private fun descargar() {
         val url = extraerUrl(b.etUrl.text?.toString())
-        if (url == null) { b.tilUrl.error = "Escriba un enlace válido"; return }
+        if (url == null || !Motor.esEnlaceTikTok(url)) {
+            b.tilUrl.error = "Pegue un enlace de TikTok"; return
+        }
         b.tilUrl.error = null
         conPermisoDeGuardado {
-            ocupado(true, "Descargando versión sin marca…")
+            ocupado(true, "Descargando sin marca de agua…", cancelable = true)
+            b.tarjetaResultado.visibility = View.GONE
             tarea = lifecycleScope.launch {
                 try {
-                    val f = Motor.descargarSinMarca(this@MainActivity, url) { p ->
+                    val d = Motor.descargar(this@MainActivity, url) { p ->
                         runOnUiThread {
                             b.progreso.isIndeterminate = p <= 0f
                             b.progreso.setProgressCompat(p.toInt().coerceIn(0, 100), true)
                         }
                     }
-                    terminar(f)
+                    ocupado(false, "Guardado en Películas/markdwn")
+                    mostrarResultado(d)
+                    refrescarHistorial()
                 } catch (e: Exception) {
                     ocupado(false, if (tarea?.isCancelled == true) "Cancelado." else e.message ?: "Error")
                 }
@@ -123,25 +151,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun limpiarVideo(uri: Uri) {
-        conPermisoDeGuardado {
-            ocupado(true, "Quitando la marca (puede tardar según la duración)…")
-            tarea = lifecycleScope.launch {
-                try {
-                    terminar(Motor.quitarMarcaLocal(this@MainActivity, uri))
-                } catch (e: Exception) {
-                    ocupado(false, e.message ?: "Error")
-                }
-            }
-        }
-    }
-
-    private suspend fun terminar(archivo: File) {
-        ultimoArchivo = archivo
-        estado("Guardando en la galería…")
-        val ruta = withContext(Dispatchers.IO) { Motor.guardarEnGaleria(this@MainActivity, archivo) }
-        ocupado(false, "Guardado en $ruta")
-        b.btnVer.visibility = View.VISIBLE
+    private fun mostrarResultado(d: Descarga) {
+        b.tarjetaResultado.visibility = View.VISIBLE
+        Imagenes.cargar(b.resMiniatura, d.miniatura, lifecycleScope)
+        b.resTitulo.text = d.titulo.ifBlank { "(sin descripción)" }
+        b.resAutor.text = "${d.nombre} · @${d.usuario}"
+        b.resAvatar.text = Formato.inicial(d.nombre)
+        b.btnResVer.setOnClickListener { Acciones.abrirVideo(this, d.video) }
+        b.btnResPerfil.setOnClickListener { Acciones.abrirPerfil(this, d.nombre, d.usuario, d.secUid) }
     }
 
     private fun actualizar() {
@@ -152,14 +169,6 @@ class MainActivity : AppCompatActivity() {
             }
             ocupado(false, msg)
         }
-    }
-
-    private fun verUltimo() {
-        val f = ultimoArchivo ?: return
-        val uri = FileProvider.getUriForFile(this, "$packageName.archivos", f)
-        val i = Intent(Intent.ACTION_VIEW).setDataAndType(uri, "video/mp4")
-            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        try { startActivity(i) } catch (e: Exception) { toast("No hay un reproductor disponible") }
     }
 
     /** En Android 9 o anterior se necesita permiso para escribir en la galería. */
@@ -175,15 +184,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun ocupado(si: Boolean, mensaje: String) {
+    private fun ocupado(si: Boolean, mensaje: String, cancelable: Boolean = false) {
         estado(mensaje)
         b.progreso.visibility = if (si) View.VISIBLE else View.GONE
         b.progreso.isIndeterminate = true
-        b.btnCancelar.visibility = if (si) View.VISIBLE else View.GONE
-        listOf(b.btnDescargar, b.btnElegir, b.btnActualizar, b.btnPegar).forEach { it.isEnabled = !si }
-        if (si) b.btnVer.visibility = View.GONE
+        b.btnCancelar.visibility = if (si && cancelable) View.VISIBLE else View.GONE
+        listOf(b.btnDescargar, b.btnActualizar, b.btnPegar).forEach { it.isEnabled = !si }
     }
 
     private fun estado(m: String) { b.tvEstado.text = m }
     private fun toast(m: String) = Toast.makeText(this, m, Toast.LENGTH_SHORT).show()
+
+    private fun confirmarQuitar(d: Descarga) {
+        AlertDialog.Builder(this)
+            .setTitle("Quitar del historial")
+            .setMessage("El video seguirá en la galería; solo se quita de esta lista.")
+            .setPositiveButton("Quitar") { _, _ -> Historial.quitar(this, d); refrescarHistorial() }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private inner class AdaptadorHistorial : RecyclerView.Adapter<AdaptadorHistorial.VH>() {
+        var lista: List<Descarga> = emptyList()
+            set(v) { field = v; notifyDataSetChanged() }
+
+        inner class VH(val v: ItemHistorialBinding) : RecyclerView.ViewHolder(v.root)
+
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) =
+            VH(ItemHistorialBinding.inflate(LayoutInflater.from(parent.context), parent, false))
+
+        override fun getItemCount() = lista.size
+
+        override fun onBindViewHolder(h: VH, pos: Int) {
+            val d = lista[pos]
+            Imagenes.cargar(h.v.miniatura, d.miniatura, lifecycleScope)
+            h.v.titulo.text = d.titulo.ifBlank { "(sin descripción)" }
+            h.v.autor.text = "@${d.usuario}"
+            h.v.fecha.text = Formato.fecha(d.fecha)
+            h.v.root.setOnClickListener { Acciones.abrirVideo(this@MainActivity, d.video) }
+            h.v.root.setOnLongClickListener { confirmarQuitar(d); true }
+            h.v.btnPerfil.setOnClickListener {
+                Acciones.abrirPerfil(this@MainActivity, d.nombre, d.usuario, d.secUid)
+            }
+        }
+    }
 }

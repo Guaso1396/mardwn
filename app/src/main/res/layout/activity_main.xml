@@ -6,168 +6,245 @@
     android:orientation="vertical">
 
     <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/barra"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         app:title="@string/app_name" />
 
-    <ScrollView
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <LinearLayout
+        <!-- Pestaña 1: descargar -->
+        <ScrollView
+            android:id="@+id/vistaDescargar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:layout_height="match_parent">
 
-            <!-- Opción 1: por enlace -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Material3.CardView.Outlined"
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <LinearLayout
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/Widget.Material3.CardView.Outlined"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/titulo_enlace"
-                        android:textAppearance="?attr/textAppearanceTitleMedium" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/ayuda_enlace"
-                        android:textAppearance="?attr/textAppearanceBodySmall" />
-
-                    <com.google.android.material.textfield.TextInputLayout
-                        android:id="@+id/tilUrl"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:hint="@string/hint_url">
-
-                        <com.google.android.material.textfield.TextInputEditText
-                            android:id="@+id/etUrl"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:inputType="textUri"
-                            android:maxLines="3" />
-                    </com.google.android.material.textfield.TextInputLayout>
+                    android:layout_height="wrap_content">
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal">
+                        android:orientation="vertical"
+                        android:padding="16dp">
 
-                        <Button
-                            android:id="@+id/btnPegar"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginEnd="8dp"
-                            android:layout_weight="1"
-                            android:text="@string/pegar" />
+                            android:text="@string/titulo_enlace"
+                            android:textAppearance="?attr/textAppearanceTitleMedium" />
 
-                        <Button
-                            android:id="@+id/btnDescargar"
-                            android:layout_width="0dp"
+                        <TextView
+                            android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_weight="2"
-                            android:text="@string/descargar" />
+                            android:layout_marginTop="4dp"
+                            android:text="@string/ayuda_enlace"
+                            android:textAppearance="?attr/textAppearanceBodySmall" />
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:id="@+id/tilUrl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:hint="@string/hint_url">
+
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/etUrl"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textUri"
+                                android:maxLines="3" />
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal">
+
+                            <Button
+                                android:id="@+id/btnPegar"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginEnd="8dp"
+                                android:layout_weight="1"
+                                android:text="@string/pegar" />
+
+                            <Button
+                                android:id="@+id/btnDescargar"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="2"
+                                android:text="@string/descargar" />
+                        </LinearLayout>
                     </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                </com.google.android.material.card.MaterialCardView>
 
-            <!-- Opción 2: video que ya tiene la marca -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/Widget.Material3.CardView.Outlined"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
-
-                <LinearLayout
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/progreso"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:layout_marginTop="16dp"
+                    android:indeterminate="true"
+                    android:visibility="gone" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/titulo_local"
-                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+                <TextView
+                    android:id="@+id/tvEstado"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textIsSelectable="true" />
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="@string/ayuda_local"
-                        android:textAppearance="?attr/textAppearanceBodySmall" />
+                <Button
+                    android:id="@+id/btnCancelar"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/cancelar"
+                    android:visibility="gone" />
 
-                    <Button
-                        android:id="@+id/btnElegir"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                <!-- Resultado de la última descarga -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/tarjetaResultado"
+                    style="@style/Widget.Material3.CardView.Filled"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:visibility="gone">
+
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/elegir" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                        android:orientation="horizontal"
+                        android:padding="12dp">
 
-            <com.google.android.material.progressindicator.LinearProgressIndicator
-                android:id="@+id/progreso"
+                        <ImageView
+                            android:id="@+id/resMiniatura"
+                            android:layout_width="96dp"
+                            android:layout_height="128dp"
+                            android:background="@drawable/fondo_miniatura"
+                            android:contentDescription="@string/miniatura"
+                            android:scaleType="centerCrop" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center_vertical"
+                                android:orientation="horizontal">
+
+                                <TextView
+                                    android:id="@+id/resAvatar"
+                                    android:layout_width="28dp"
+                                    android:layout_height="28dp"
+                                    android:background="@drawable/fondo_avatar"
+                                    android:gravity="center"
+                                    android:textColor="#FFFFFF"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/resAutor"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="8dp"
+                                    android:layout_weight="1"
+                                    android:ellipsize="end"
+                                    android:maxLines="1"
+                                    android:textAppearance="?attr/textAppearanceLabelLarge" />
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/resTitulo"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:ellipsize="end"
+                                android:maxLines="3"
+                                android:textAppearance="?attr/textAppearanceBodyMedium" />
+
+                            <Button
+                                android:id="@+id/btnResVer"
+                                style="@style/Widget.Material3.Button.TonalButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="6dp"
+                                android:text="@string/ver" />
+
+                            <Button
+                                android:id="@+id/btnResPerfil"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/ver_perfil" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <Button
+                    android:id="@+id/btnActualizar"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="16dp"
+                    android:text="@string/actualizar" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/aviso_legal"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
+            </LinearLayout>
+        </ScrollView>
+
+        <!-- Pestaña 2: mis descargas -->
+        <FrameLayout
+            android:id="@+id/vistaHistorial"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/listaHistorial"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:indeterminate="true"
-                android:visibility="gone" />
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="8dp" />
 
             <TextView
-                android:id="@+id/tvEstado"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textIsSelectable="true" />
-
-            <Button
-                android:id="@+id/btnVer"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/ver"
-                android:visibility="gone" />
-
-            <Button
-                android:id="@+id/btnCancelar"
-                style="@style/Widget.Material3.Button.TextButton"
+                android:id="@+id/tvHistorialVacio"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/cancelar"
-                android:visibility="gone" />
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="32dp"
+                android:text="@string/historial_vacio"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+        </FrameLayout>
+    </FrameLayout>
 
-            <Button
-                android:id="@+id/btnActualizar"
-                style="@style/Widget.Material3.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:text="@string/actualizar" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/aviso_legal"
-                android:textAppearance="?attr/textAppearanceBodySmall" />
-        </LinearLayout>
-    </ScrollView>
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/navegacion"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:menu="@menu/navegacion" />
 </LinearLayout>

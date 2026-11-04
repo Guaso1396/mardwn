@@ -2,7 +2,6 @@ package com.example.markdwn
 
 import android.content.ContentValues
 import android.content.Context
-import android.media.MediaMetadataRetriever
 import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Build
@@ -16,13 +15,30 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 import java.io.File
+
+/** Un video del perfil de un creador. */
+data class VideoPerfil(
+    val id: String,
+    val url: String,
+    val titulo: String,
+    val miniatura: String?,
+    val vistas: Long?,
+)
+
+/** Perfil de un creador de TikTok con sus videos más recientes. */
+data class Perfil(
+    val nombre: String,
+    val usuario: String,
+    val videos: List<VideoPerfil>,
+)
 
 /**
  * Lógica de la app, independiente de la interfaz:
- *  1. Descargar la versión original (sin marca) de un enlace usando yt-dlp.
- *  2. Limpiar la marca incrustada en un video local con el filtro "delogo" de ffmpeg.
- *  3. Guardar el resultado en la galería.
+ *  - Descargar la versión original (sin logo de TikTok ni @usuario) de un enlace de TikTok.
+ *  - Guardarla en la galería y en el historial.
+ *  - Consultar el perfil y los videos de un creador.
  */
 object Motor {
 
@@ -37,6 +53,7 @@ object Motor {
         "best[format_note!*=?watermark][format_id!=download][format_id!=download_addr][vcodec!=none]"
 
     private const val ID_PROCESO = "descarga"
+    private const val VIDEOS_POR_PERFIL = 30
     private val mutexInit = Mutex()
     @Volatile private var iniciado = false
 
@@ -59,36 +76,72 @@ object Motor {
         else "yt-dlp actualizado a $version"
     }
 
-    suspend fun descargarSinMarca(
+    /** Acepta enlaces de tiktok.com y los cortos vm./vt.tiktok.com. */
+    fun esEnlaceTikTok(url: String): Boolean {
+        val host = runCatching { Uri.parse(url).host }.getOrNull()?.lowercase() ?: return false
+        return host == "tiktok.com" || host.endsWith(".tiktok.com")
+    }
+
+    /**
+     * Descarga el video sin marca, lo guarda en la galería y lo agrega al historial.
+     * Devuelve la entrada del historial creada.
+     */
+    suspend fun descargar(
         ctx: Context,
         url: String,
         progreso: (Float) -> Unit,
-    ): File = withContext(Dispatchers.IO) {
+    ): Descarga = withContext(Dispatchers.IO) {
+        if (!esEnlaceTikTok(url)) throw Exception("Solo se aceptan enlaces de TikTok.")
         val dir = File(ctx.cacheDir, "descargas").apply { deleteRecursively(); mkdirs() }
         val req = YoutubeDLRequest(url).apply {
             addOption("-f", FORMATO_SIN_MARCA)
-            addOption("-o", "${dir.absolutePath}/%(extractor)s_%(id)s.%(ext)s")
+            addOption("-o", "${dir.absolutePath}/%(id)s.%(ext)s")
+            addOption("--write-info-json")
+            addOption("--write-thumbnail")
             addOption("--no-playlist")
             addOption("--no-mtime")
         }
         try {
             YoutubeDL.getInstance().execute(req, ID_PROCESO, false) { p, _, _ -> progreso(p) }
         } catch (e: YoutubeDLException) {
-            val msg = e.message.orEmpty()
-            throw Exception(
-                when {
-                    "Requested format is not available" in msg ->
-                        "Este sitio no ofrece una versión sin marca para este video. " +
-                            "Descárguelo y use la opción 2 (limpiar marca)."
-                    "Unsupported URL" in msg -> "Enlace no soportado."
-                    else -> "Error de yt-dlp. Pruebe 'Actualizar yt-dlp'.\n\n${msg.takeLast(400)}"
-                }
-            )
+            throw Exception(traducirError(e.message.orEmpty()))
         }
-        dir.listFiles()
-            ?.filter { it.isFile && !it.name.endsWith(".part") }
-            ?.maxByOrNull { it.length() }
-            ?: throw Exception("La descarga terminó pero no se encontró el archivo.")
+
+        val archivos = dir.listFiles()?.toList().orEmpty()
+        val infoArchivo = archivos.firstOrNull { it.name.endsWith(".info.json") }
+            ?: throw Exception("La descarga terminó pero no se encontró la información del video.")
+        val info = JSONObject(infoArchivo.readText())
+        val id = info.optString("id").ifEmpty { System.currentTimeMillis().toString() }
+        val video = archivos.firstOrNull { it.extension.lowercase() in setOf("mp4", "mov", "webm", "mkv") }
+            ?: throw Exception("La descarga terminó pero no se encontró el video.")
+        val miniaturaTemp = archivos.firstOrNull {
+            it != video && !it.name.endsWith(".json") && it.extension.lowercase() in
+                setOf("jpg", "jpeg", "png", "webp", "image", "heic")
+        }
+
+        // La miniatura se guarda en almacenamiento privado para el historial
+        val miniatura = miniaturaTemp?.let { m ->
+            val dest = File(File(ctx.filesDir, "miniaturas").apply { mkdirs() }, "$id.${m.extension}")
+            m.copyTo(dest, overwrite = true)
+            dest.absolutePath
+        }
+
+        val ubicacion = guardarEnGaleria(ctx, video, id)
+        val usuario = info.optString("uploader")
+        val entrada = Descarga(
+            id = id,
+            url = info.optString("webpage_url").ifEmpty { url },
+            titulo = info.optString("title").ifEmpty { info.optString("description") },
+            nombre = info.optString("channel").ifEmpty { usuario },
+            usuario = usuario,
+            secUid = info.optString("channel_id"),
+            miniatura = miniatura,
+            video = ubicacion,
+            fecha = System.currentTimeMillis(),
+        )
+        Historial.agregar(ctx, entrada)
+        dir.deleteRecursively()
+        entrada
     }
 
     fun cancelar() {
@@ -96,94 +149,83 @@ object Motor {
     }
 
     /**
-     * Zonas típicas de la marca de TikTok (logo + @usuario), en fracciones del ancho/alto
-     * y de la duración. La marca suele estar arriba a la izquierda y luego salta abajo a la
-     * derecha. SON APROXIMACIONES: ajústelas si en sus videos la marca queda fuera.
+     * Lee los videos recientes de un creador. Se usa el identificador secUid (channel_id)
+     * cuando se conoce, porque así yt-dlp no necesita abrir la página del perfil.
      */
-    data class Zona(
-        val x: Float, val y: Float, val ancho: Float, val alto: Float,
-        val desde: Float, val hasta: Float,
-    )
-
-    val ZONAS_TIKTOK = listOf(
-        Zona(x = 0.02f, y = 0.03f, ancho = 0.50f, alto = 0.12f, desde = 0.0f, hasta = 0.5f),
-        Zona(x = 0.48f, y = 0.82f, ancho = 0.50f, alto = 0.13f, desde = 0.5f, hasta = 1.0f),
-    )
-
-    /**
-     * Reconstruye las zonas con marca usando delogo (interpola desde los bordes).
-     * No recupera la imagen original: la zona puede quedar algo borrosa.
-     */
-    suspend fun quitarMarcaLocal(
+    suspend fun cargarPerfil(
         ctx: Context,
-        origen: Uri,
-        zonas: List<Zona> = ZONAS_TIKTOK,
-    ): File = withContext(Dispatchers.IO) {
-        val dir = File(ctx.cacheDir, "limpieza").apply { deleteRecursively(); mkdirs() }
-        val entrada = File(dir, "entrada.mp4")
-        ctx.contentResolver.openInputStream(origen)?.use { inp ->
-            entrada.outputStream().use { inp.copyTo(it) }
-        } ?: throw Exception("No se pudo leer el video seleccionado.")
-
-        val (w, h, dur) = medir(entrada)
-        val filtros = zonas.joinToString(",") { z ->
-            val px = maxOf(1, (z.x * w).toInt())
-            val py = maxOf(1, (z.y * h).toInt())
-            val pw = minOf((z.ancho * w).toInt(), w - px - 2)
-            val ph = minOf((z.alto * h).toInt(), h - py - 2)
-            "delogo=x=$px:y=$py:w=$pw:h=$ph" +
-                ":enable='between(t,%.2f,%.2f)'".format(java.util.Locale.US, z.desde * dur, z.hasta * dur)
+        secUid: String?,
+        usuario: String,
+        nombre: String?,
+    ): Perfil = withContext(Dispatchers.IO) {
+        val url = if (!secUid.isNullOrBlank()) "tiktokuser:$secUid" else "https://www.tiktok.com/@$usuario"
+        val req = YoutubeDLRequest(url).apply {
+            addOption("--flat-playlist")
+            addOption("-J")
+            addOption("--playlist-end", VIDEOS_POR_PERFIL)
+            addOption("--extractor-retries", 3)
         }
-        val salida = File(dir, "limpio.mp4")
-        val base = listOf("-y", "-i", entrada.absolutePath, "-vf", filtros)
-        val fin = listOf("-c:a", "copy", "-movflags", "+faststart", salida.absolutePath)
-        try {
-            ejecutarFfmpeg(ctx, base + listOf("-c:v", "libx264", "-crf", "18", "-preset", "veryfast") + fin)
-        } catch (e: Exception) {
-            // Si el ffmpeg incluido no trae libx264, se usa el codificador mpeg4 interno
-            ejecutarFfmpeg(ctx, base + listOf("-c:v", "mpeg4", "-q:v", "2") + fin)
+        val salida = try {
+            YoutubeDL.getInstance().execute(req, null, false, null).out
+        } catch (e: YoutubeDLException) {
+            throw Exception(traducirError(e.message.orEmpty()))
         }
-        salida
+        val json = JSONObject(salida)
+        val entradas = json.optJSONArray("entries")
+        val videos = mutableListOf<VideoPerfil>()
+        var nombreLeido: String? = null
+        if (entradas != null) {
+            for (i in 0 until entradas.length()) {
+                val e = entradas.optJSONObject(i) ?: continue
+                if (nombreLeido == null) nombreLeido = e.optString("channel").ifEmpty { null }
+                val id = e.optString("id")
+                val enlace = e.optString("url").ifEmpty { "https://www.tiktok.com/@$usuario/video/$id" }
+                videos += VideoPerfil(
+                    id = id,
+                    url = enlace,
+                    titulo = e.optString("title"),
+                    miniatura = elegirMiniatura(e),
+                    vistas = if (e.has("view_count") && !e.isNull("view_count")) e.optLong("view_count") else null,
+                )
+            }
+        }
+        Perfil(
+            nombre = nombre?.ifBlank { null } ?: nombreLeido ?: usuario,
+            usuario = usuario,
+            videos = videos,
+        )
     }
 
-    private fun medir(f: File): Triple<Int, Int, Double> {
-        val r = MediaMetadataRetriever()
-        try {
-            r.setDataSource(f.absolutePath)
-            var w = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
-            var h = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
-            val rot = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)?.toIntOrNull() ?: 0
-            if (rot == 90 || rot == 270) { val t = w; w = h; h = t } // ffmpeg rota automáticamente
-            val ms = r.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
-            if (w <= 0 || h <= 0 || ms <= 0) throw Exception("No se pudo leer el tamaño/duración del video.")
-            return Triple(w, h, ms / 1000.0)
-        } finally {
-            r.release()
+    private fun elegirMiniatura(e: JSONObject): String? {
+        val lista = e.optJSONArray("thumbnails") ?: return null
+        var primera: String? = null
+        for (preferida in listOf("cover", "originCover", "thumbnail")) {
+            for (i in 0 until lista.length()) {
+                val t = lista.optJSONObject(i) ?: continue
+                val u = t.optString("url").ifEmpty { null } ?: continue
+                if (primera == null) primera = u
+                if (t.optString("id") == preferida) return u
+            }
         }
+        return primera
+    }
+
+    private fun traducirError(msg: String): String = when {
+        "Requested format is not available" in msg ->
+            "TikTok no ofreció una versión sin marca para este video."
+        "Unsupported URL" in msg -> "Enlace no soportado. Use un enlace de un video de TikTok."
+        "private" in msg.lowercase() -> "La cuenta o el video es privado."
+        "Unable to extract secondary user ID" in msg -> "No se pudo abrir el perfil de este creador."
+        "does not have any videos" in msg -> "Este creador no tiene videos publicados."
+        else -> "Error de yt-dlp. Pruebe 'Actualizar yt-dlp'.\n\n${msg.takeLast(400)}"
     }
 
     /**
-     * Ejecuta el binario ffmpeg que trae youtubedl-android.
-     * Las rutas replican las que usa la librería internamente (versión 0.18.1):
-     * binario en nativeLibraryDir/libffmpeg.so y bibliotecas en noBackupFilesDir/youtubedl-android/packages.
+     * Copia el video a Películas/markdwn para que aparezca en la galería.
+     * Devuelve un content:// (Android 10+) o la ruta del archivo (Android 9 o anterior).
      */
-    private fun ejecutarFfmpeg(ctx: Context, args: List<String>) {
-        val bin = File(ctx.applicationInfo.nativeLibraryDir, "libffmpeg.so")
-        val paquetes = File(ctx.noBackupFilesDir, "youtubedl-android/packages")
-        val pb = ProcessBuilder(listOf(bin.absolutePath, "-hide_banner", "-loglevel", "error") + args)
-            .redirectErrorStream(true)
-        pb.environment().apply {
-            put("LD_LIBRARY_PATH", "$paquetes/python/usr/lib:$paquetes/ffmpeg/usr/lib")
-            put("TMPDIR", ctx.cacheDir.absolutePath)
-        }
-        val proc = pb.start()
-        val log = proc.inputStream.bufferedReader().readText()
-        if (proc.waitFor() != 0) throw Exception("ffmpeg falló:\n${log.takeLast(400)}")
-    }
-
-    /** Copia el video a Películas/markdwn para que aparezca en la galería. */
-    fun guardarEnGaleria(ctx: Context, archivo: File): String {
-        val nombre = "markdwn_${System.currentTimeMillis()}.mp4"
+    private fun guardarEnGaleria(ctx: Context, archivo: File, id: String): String {
+        val nombre = "markdwn_${id}_${System.currentTimeMillis()}.mp4"
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val cr = ctx.contentResolver
             val valores = ContentValues().apply {
@@ -198,6 +240,7 @@ object Motor {
             valores.clear()
             valores.put(MediaStore.Video.Media.IS_PENDING, 0)
             cr.update(uri, valores, null, null)
+            return uri.toString()
         } else {
             @Suppress("DEPRECATION")
             val dir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MOVIES), "markdwn")
@@ -205,7 +248,7 @@ object Motor {
             val destino = File(dir, nombre)
             archivo.copyTo(destino, overwrite = true)
             MediaScannerConnection.scanFile(ctx, arrayOf(destino.absolutePath), arrayOf("video/mp4"), null)
+            return destino.absolutePath
         }
-        return "Películas/markdwn/$nombre"
     }
 }

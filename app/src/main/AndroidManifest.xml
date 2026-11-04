@@ -32,6 +32,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".PerfilActivity"
+            android:exported="false" />
+
         <!-- Permite abrir el último video con el reproductor del teléfono -->
         <provider
             android:name="androidx.core.content.FileProvider"
