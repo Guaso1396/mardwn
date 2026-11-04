@@ -26,12 +26,12 @@ jobs:
           mkdir -p salida
           for f in app/build/outputs/apk/debug/*.apk; do
             abi=$(basename "$f" | sed -E 's/^app-(.*)-debug\.apk$/\1/')
-            cp "$f" "salida/mardwn-$abi.apk"
+            cp "$f" "salida/markdwn-$abi.apk"
           done
           ls -la salida
       - uses: actions/upload-artifact@v4
         with:
-          name: mardwn-apk
+          name: markdwn-apk
           path: salida/*.apk
       # Publica los APK en la página de Releases (descarga directa, sin iniciar sesión)
       - name: Publicar en Releases
@@ -39,11 +39,11 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ultima
-          name: mardwn (última versión)
+          name: markdwn (última versión)
           prerelease: false
           make_latest: true
           body: |
-            Descargue **mardwn-arm64-v8a.apk** (sirve para casi todos los celulares de los últimos años).
-            Si no instala, pruebe **mardwn-armeabi-v7a.apk** (celulares antiguos de 32 bits).
+            Descargue **markdwn-arm64-v8a.apk** (sirve para casi todos los celulares de los últimos años).
+            Si no instala, pruebe **markdwn-armeabi-v7a.apk** (celulares antiguos de 32 bits).
             Compilado automáticamente desde el commit ${{ github.sha }}.
           files: salida/*.apk

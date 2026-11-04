@@ -1,4 +1,4 @@
-package com.example.mardwn
+package com.example.markdwn
 
 import android.Manifest
 import android.content.ClipboardManager
@@ -17,7 +17,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
-import com.example.mardwn.databinding.ActivityMainBinding
+import com.example.markdwn.databinding.ActivityMainBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

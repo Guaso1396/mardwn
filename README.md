@@ -1,9 +1,9 @@
-# mardwn (Android)
+# markdwn (Android)
 
 App Android (Kotlin) para descargar videos de TikTok sin la marca de agua (logo + @usuario).
 
 ## Abrir y ejecutar
-1. Android Studio → **File › Open** → seleccione la carpeta `mardwn`.
+1. Android Studio → **File › Open** → seleccione la carpeta `markdwn`.
 2. Espere la sincronización de Gradle (descarga AGP 8.7.3, Gradle 8.9 y las librerías).
    Si Android Studio ofrece actualizar AGP, puede aceptar.
 3. Conecte un teléfono (Depuración USB activada) o use un emulador y pulse **Run ▶**.
@@ -13,15 +13,15 @@ Requisitos: Android Studio Ladybug (2024.2) o posterior, JDK 17 (incluido en And
 ## Cómo funciona
 - **Opción 1 – Enlace:** usa yt-dlp (vía `youtubedl-android` 0.18.1) y descarta los formatos que yt-dlp
   marca como `watermarked` (`download` / `download_addr`). Descarga el stream de reproducción original (`play_addr`), sin marca.
-  También acepta enlaces enviados con **Compartir → mardwn** desde TikTok.
+  También acepta enlaces enviados con **Compartir → markdwn** desde TikTok.
 - **Opción 2 – Video local:** aplica el filtro `delogo` de ffmpeg sobre las zonas típicas de la marca
   (`Motor.ZONAS_TIKTOK`). Interpola los píxeles; puede quedar una mancha borrosa. Ajuste las zonas si es necesario.
-- Los resultados se guardan en **Películas/mardwn**.
+- Los resultados se guardan en **Películas/markdwn**.
 - **Actualizar yt-dlp:** úselo cuando las descargas fallen; TikTok cambia con frecuencia.
 
 ## Archivos principales
-- `app/src/main/java/com/example/mardwn/Motor.kt` – descarga, limpieza ffmpeg, guardado.
-- `app/src/main/java/com/example/mardwn/MainActivity.kt` – interfaz.
+- `app/src/main/java/com/example/markdwn/Motor.kt` – descarga, limpieza ffmpeg, guardado.
+- `app/src/main/java/com/example/markdwn/MainActivity.kt` – interfaz.
 - `app/src/main/res/layout/activity_main.xml` – diseño de pantalla.
 
 ## Todo es gratuito
@@ -49,7 +49,7 @@ Use la app solo con videos propios o con permiso del autor.
 
 ## Descargar e instalar en el celular
 1. En el celular, abra **https://github.com/Guaso1396/mardwn/releases/latest**.
-2. Descargue **mardwn-arm64-v8a.apk** (si no instala, use `mardwn-armeabi-v7a.apk`).
+2. Descargue **markdwn-arm64-v8a.apk** (si no instala, use `markdwn-armeabi-v7a.apk`).
 3. Ábralo y permita "Instalar apps de origen desconocido" cuando Android lo pida.
 
 Cada push a `main` vuelve a compilar y reemplaza los APK de esa página.
@@ -78,4 +78,4 @@ el APK se puede instalar directamente desde la pestaña Actions o desde GitHub R
 Use la app solo con videos propios o con permiso del autor.
 
 ## APK compilado automáticamente
-Cada push a `main` compila el APK con GitHub Actions. Descárguelo en la pestaña **Actions** → última ejecución → **Artifacts** → `mardwn-debug-apk`.
+Cada push a `main` compila el APK con GitHub Actions. Descárguelo en la pestaña **Actions** → última ejecución → **Artifacts** → `markdwn-debug-apk`.
