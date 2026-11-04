@@ -1,0 +1,63 @@
+name: Probar en emulador
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  emulador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Compilar APK
+        run: |
+          ./gradlew assembleDebug
+          mkdir -p salida && cp app/build/outputs/apk/debug/app-x86_64-debug.apk salida/markdwn-x86_64.apk
+      # Referencia: qué formatos ofrece TikTok para el video de prueba (con yt-dlp en el servidor)
+      - name: Comparar con yt-dlp en el servidor
+        run: |
+          pip install -q yt-dlp
+          mkdir -p resultados
+          yt-dlp -F "https://www.tiktok.com/@patrox/video/6742501081818877190" | tee resultados/formatos.txt || true
+          yt-dlp -f "download_addr-0/download" -o resultados/con_marca.%(ext)s "https://www.tiktok.com/@patrox/video/6742501081818877190" || true
+      - name: Habilitar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Ejecutar la app en el emulador
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash .github/pruebas/prueba.sh
+      - name: Fotogramas para revisar la marca de agua
+        if: always()
+        run: |
+          sudo apt-get install -y -qq ffmpeg >/dev/null
+          cd resultados
+          for v in video_app.mp4 con_marca.mp4; do
+            [ -f "$v" ] || continue
+            d=$(ffprobe -v error -show_entries format=duration -of csv=p=0 "$v")
+            for f in 0.15 0.5 0.85; do
+              t=$(python3 -c "print($d*$f)")
+              ffmpeg -loglevel error -y -ss "$t" -i "$v" -frames:v 1 -vf scale=360:-1 "${v%.mp4}_$f.png"
+            done
+          done
+          ls -la
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: resultados-prueba
+          path: resultados/
