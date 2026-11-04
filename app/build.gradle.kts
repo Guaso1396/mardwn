@@ -28,6 +28,16 @@ android {
         }
     }
 
+    // Un APK por arquitectura (más liviano). La mayoría de celulares actuales usan arm64-v8a.
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            isUniversalApk = false
+        }
+    }
+
     // Las librerías nativas (python, ffmpeg) deben extraerse al instalar para poder ejecutarse
     packaging {
         jniLibs {

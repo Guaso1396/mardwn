@@ -47,5 +47,35 @@ el APK se puede instalar directamente desde la pestaña Actions o desde GitHub R
 ## Aviso
 Use la app solo con videos propios o con permiso del autor.
 
+## Descargar e instalar en el celular
+1. En el celular, abra **https://github.com/Guaso1396/mardwn/releases/latest**.
+2. Descargue **mardwn-arm64-v8a.apk** (si no instala, use `mardwn-armeabi-v7a.apk`).
+3. Ábralo y permita "Instalar apps de origen desconocido" cuando Android lo pida.
+
+Cada push a `main` vuelve a compilar y reemplaza los APK de esa página.
+
+## Todo es gratuito
+La app no usa servicios de pago, claves de API ni servidores propios: todo se ejecuta en el teléfono.
+
+| Componente | Uso | Licencia | Costo |
+|---|---|---|---|
+| Android Studio, Android SDK, Gradle | Desarrollo y compilación | Gratuitos (Gradle: Apache 2.0) | $0 |
+| Kotlin, kotlinx-coroutines | Lenguaje y tareas en segundo plano | Apache 2.0 | $0 |
+| AndroidX, Material Components | Interfaz | Apache 2.0 | $0 |
+| youtubedl-android 0.18.1 | Ejecuta yt-dlp y ffmpeg en Android | GPL-3.0 | $0 |
+| yt-dlp | Descarga del video original | Unlicense (dominio público) | $0 |
+| FFmpeg | Limpieza de la marca (delogo) | LGPL/GPL | $0 |
+| Python (incluido en la librería) | Ejecuta yt-dlp | PSF | $0 |
+| GitHub (repositorio público) + GitHub Actions | Código y compilación del APK | — | $0 en repositorios públicos |
+
+Como `youtubedl-android` es GPL-3.0, este proyecto también se distribuye bajo **GPL-3.0** (ver `LICENSE`):
+cualquiera puede usar, modificar y compartir el código gratis, siempre que mantenga el código abierto bajo la misma licencia.
+
+Único costo opcional: publicar en Google Play requiere una cuenta de desarrollador de pago único. No es necesario:
+el APK se puede instalar directamente desde la pestaña Actions o desde GitHub Releases.
+
+## Aviso
+Use la app solo con videos propios o con permiso del autor.
+
 ## APK compilado automáticamente
 Cada push a `main` compila el APK con GitHub Actions. Descárguelo en la pestaña **Actions** → última ejecución → **Artifacts** → `mardwn-debug-apk`.
