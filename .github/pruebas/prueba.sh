@@ -34,7 +34,7 @@ echo "Resultado perfil: $R2"
 sleep 8; cap 03_perfil
 
 echo "== 5. Descargar un video desde el perfil"
-adb shell input tap 180 1500
+$UI tocar miniatura
 R3=$($UI esperar estado 240 'Guardado|Error|No se')
 echo "Resultado descarga desde perfil: $R3"
 sleep 2; cap 04_perfil_descarga

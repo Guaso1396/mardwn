@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   emulador:
     runs-on: ubuntu-latest
@@ -20,13 +23,26 @@ jobs:
         run: |
           ./gradlew assembleDebug
           mkdir -p salida && cp app/build/outputs/apk/debug/app-x86_64-debug.apk salida/markdwn-x86_64.apk
-      # Referencia: qué formatos ofrece TikTok para el video de prueba (con yt-dlp en el servidor)
-      - name: Comparar con yt-dlp en el servidor
+      # Diagnóstico: ¿TikTok responde a yt-dlp (configuración normal) desde este servidor?
+      - name: Diagnóstico de yt-dlp en el servidor
         run: |
-          pip install -q yt-dlp
           mkdir -p resultados
-          yt-dlp -F "https://www.tiktok.com/@patrox/video/6742501081818877190" | tee resultados/formatos.txt || true
-          yt-dlp -f "download_addr-0/download" -o resultados/con_marca.%(ext)s "https://www.tiktok.com/@patrox/video/6742501081818877190" || true
+          pip install -q yt-dlp
+          URLS="https://www.tiktok.com/@moxypatch/video/7206382937372134662
+          https://www.tiktok.com/@tatemcrae/video/7107337212743830830
+          https://www.tiktok.com/@hankgreen1/video/7047596209028074758
+          https://www.tiktok.com/@leenabhushan/video/6748451240264420610"
+          ELEGIDA=""
+          for u in $URLS; do
+            if yt-dlp -F "$u" > resultados/f.txt 2>&1; then r=OK; else r=FALLA; fi
+            echo "$r $u" | tee -a resultados/diagnostico.txt
+            tail -4 resultados/f.txt | sed 's/^/    /' | tee -a resultados/diagnostico.txt
+            if [ "$r" = OK ] && [ -z "$ELEGIDA" ]; then ELEGIDA="$u"; cp resultados/f.txt resultados/formatos.txt; fi
+          done
+          echo "URL_PRUEBA=${ELEGIDA:-https://www.tiktok.com/@moxypatch/video/7206382937372134662}" >> "$GITHUB_ENV"
+          if [ -n "$ELEGIDA" ]; then
+            yt-dlp -f "download_addr-0/download" -o "resultados/con_marca.%(ext)s" "$ELEGIDA" || true
+          fi
       - name: Habilitar KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -56,6 +72,15 @@ jobs:
             done
           done
           ls -la
+      - name: Publicar resultados (para revisarlos)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          zip -qr resultados.zip resultados
+          gh release view pruebas --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create pruebas --repo "$GITHUB_REPOSITORY" --prerelease --title "Resultados de pruebas automáticas" --notes "Capturas y registros de la última prueba en emulador."
+          gh release upload pruebas resultados.zip --clobber --repo "$GITHUB_REPOSITORY"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
