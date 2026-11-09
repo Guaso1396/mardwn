@@ -213,6 +213,10 @@ object Motor {
     private fun traducirError(msg: String): String = when {
         "Requested format is not available" in msg ->
             "TikTok no ofreció una versión sin marca para este video."
+        "Unexpected response from webpage request" in msg || "impersonat" in msg.lowercase() ->
+            "TikTok rechazó la conexión. Pruebe con otra red (Wi-Fi o datos) o toque 'Actualizar yt-dlp'."
+        "Unable to download webpage" in msg || "Unable to download JSON" in msg ->
+            "No se pudo conectar con TikTok. Revise su conexión a internet."
         "Unsupported URL" in msg -> "Enlace no soportado. Use un enlace de un video de TikTok."
         "private" in msg.lowercase() -> "La cuenta o el video es privado."
         "Unable to extract secondary user ID" in msg -> "No se pudo abrir el perfil de este creador."

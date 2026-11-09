@@ -11,8 +11,7 @@ adb logcat -c
 adb install -r salida/markdwn-x86_64.apk || exit 1
 
 echo "== 1. Abrir la app con un enlace compartido"
-adb shell am start -a android.intent.action.SEND -t text/plain \
-  --es android.intent.extra.TEXT "Mira este video $URL" -n $PKG/.MainActivity
+adb shell "am start -a android.intent.action.SEND -t text/plain --es android.intent.extra.TEXT '$URL' -n $PKG/.MainActivity"
 echo "Estado: $($UI esperar tvEstado 240 'Listo|No se pudo')"
 cap 01_inicio
 
