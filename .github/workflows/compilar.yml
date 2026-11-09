@@ -43,17 +43,20 @@ jobs:
             | grep -v '^markdwn-' | while read -r a; do
               gh release delete-asset ultima "$a" --repo "$GITHUB_REPOSITORY" -y
             done || true
-      # Publica los APK en la página de Releases (descarga directa, sin iniciar sesión)
+      # Publica los APK en la página de Releases (descarga directa, sin iniciar sesión), con reintentos
       - name: Publicar en Releases
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ultima
-          name: markdwn (última versión)
-          prerelease: false
-          make_latest: true
-          body: |
-            Descargue **markdwn-arm64-v8a.apk** (sirve para casi todos los celulares de los últimos años).
-            Si no instala, pruebe **markdwn-armeabi-v7a.apk** (celulares antiguos de 32 bits).
-            Compilado automáticamente desde el commit ${{ github.sha }}.
-          files: salida/*.apk
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R="$GITHUB_REPOSITORY"
+          NOTAS="Descargue **markdwn-arm64-v8a.apk** (sirve para casi todos los celulares de los últimos años). Si no instala, pruebe **markdwn-armeabi-v7a.apk** (celulares antiguos de 32 bits). Compilado desde el commit $GITHUB_SHA."
+          gh release view ultima --repo "$R" >/dev/null 2>&1 || gh release create ultima --repo "$R" --latest --title "markdwn (última versión)" --notes "$NOTAS"
+          gh release edit ultima --repo "$R" --notes "$NOTAS"
+          for f in salida/*.apk; do
+            for intento in 1 2 3 4; do
+              gh release upload ultima "$f" --clobber --repo "$R" && break
+              echo "Reintento $intento para $f"; sleep $((intento * 10))
+            done
+          done
+          gh release view ultima --repo "$R" --json assets -q '.assets[].name'
