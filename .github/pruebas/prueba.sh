@@ -39,8 +39,8 @@ echo "Resultado descarga desde perfil: $R3"
 sleep 2; cap 04_perfil_descarga
 
 echo "== 6. Mis descargas"
-adb shell input keyevent KEYCODE_BACK; sleep 2
-$UI tocar nav_historial || $UI tocar_texto "Mis descargas"
+adb shell am start -n $PKG/.MainActivity >/dev/null; sleep 3
+$UI tocar_texto "Mis descargas" || $UI tocar nav_historial
 sleep 4; cap 05_historial
 
 echo "== 7. Errores graves en el registro"
